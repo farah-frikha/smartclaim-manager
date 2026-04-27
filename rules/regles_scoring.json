@@ -1,0 +1,142 @@
+{
+  "metadata": {
+    "title": "Règles métier Scoring - Assurance Groupe Tunisie",
+    "version": "1.0.0",
+    "country": "TN",
+    "language": "fr",
+    "generated_on": "2026-04-16"
+  },
+  "engine": {
+    "initial_score": 100,
+    "min_score": 0,
+    "max_score": 100,
+    "final_score_formula": "Clamp(initial_score + SUM(all_applicable_deltas), min_score, max_score)"
+  },
+  "negative_indicators_sante": [
+    {
+      "id": "SS-01",
+      "title": "Fréquence de consultations anormalement élevée",
+      "delta": -20,
+      "flag": "FREQUENCE_ANORMALE",
+      "logic": {
+        "expression": "Nb_Soins_12m > 3 * Moyenne_Nationale",
+        "required_fields": ["Nb_Soins_12m", "Moyenne_Nationale"],
+        "data_query_hint": "COUNT des soins sur 12 (ou 24) derniers mois dans SQLite pour l'assuré"
+      }
+    },
+    {
+      "id": "SS-02",
+      "title": "Montant réclamé supérieur au tarif CNSS",
+      "delta": -25,
+      "flag": "DEPASSEMENT_TARIF",
+      "logic": {
+        "expression": "Montant_Demande > Tarif_CNSS_Acte",
+        "required_fields": ["Montant_Demande", "Tarif_CNSS_Acte", "Justification_Depassement_Autorise"]
+      }
+    },
+    {
+      "id": "SS-03",
+      "title": "Sinistre après fin de contrat sans maintien de droits",
+      "delta": -40,
+      "flag": "INELIGIBILITE",
+      "logic": {
+        "expression": "Date_Sinistre > Date_Fin_Contrat AND Clause_Maintien_Droits == false",
+        "required_fields": ["Date_Sinistre", "Date_Fin_Contrat", "Clause_Maintien_Droits"]
+      }
+    },
+    {
+      "id": "SS-04",
+      "title": "Première déclaration dans les 30 jours suivant l'adhésion",
+      "delta": -15,
+      "flag": "CARENCE_SUSPECTE",
+      "logic": {
+        "expression": "(Date_Sinistre - Date_Affiliation) < 30 jours",
+        "required_fields": ["Date_Sinistre", "Date_Affiliation"]
+      }
+    }
+  ],
+  "negative_indicators_prevoyance": [
+    {
+      "id": "SP-01",
+      "title": "Incohérence entre durée d'arrêt et pathologie",
+      "delta": -30,
+      "flag": "INCOHERENCE_MEDICALE",
+      "logic": {
+        "expression": "Duree_Arret > Duree_Referentiel_Pathologie",
+        "required_fields": ["Duree_Arret", "Duree_Referentiel_Pathologie", "Pathologie"]
+      }
+    },
+    {
+      "id": "SP-02",
+      "title": "Arrêts répétitifs sur 24 mois",
+      "delta": -20,
+      "flag": "ARRETS_REPETITIFS",
+      "logic": {
+        "expression": "Nb_Arrets_24m > 3",
+        "required_fields": ["Nb_Arrets_24m"]
+      }
+    },
+    {
+      "id": "SP-03",
+      "title": "Indemnités > salaire déclaré CNSS",
+      "delta": -50,
+      "flag": "DEPASSEMENT_SALAIRE",
+      "logic": {
+        "expression": "(Indemnite_CNSS + Indemnite_Assureur) > Salaire_Base_CNSS",
+        "required_fields": ["Indemnite_CNSS", "Indemnite_Assureur", "Salaire_Base_CNSS"]
+      }
+    },
+    {
+      "id": "SP-04",
+      "title": "Accident du travail déclaré hors délai",
+      "delta": -20,
+      "flag": "DECLARATION_TARDIVE_AT",
+      "logic": {
+        "expression": "(Date_Declaration - Date_Accident) > 3 jours_ouvrables",
+        "required_fields": ["Date_Declaration", "Date_Accident"]
+      }
+    },
+    {
+      "id": "SP-05",
+      "title": "Décès à l'étranger sans acte légalisé",
+      "delta": -20,
+      "flag": "DOCUMENT_ETRANGER",
+      "logic": {
+        "expression": "Pays != 'TN' AND Apostille_Presente == false",
+        "required_fields": ["Pays", "Apostille_Presente"]
+      }
+    }
+  ],
+  "positive_indicators": [
+    {
+      "id": "SC-01",
+      "title": "Dossier complet dès la première soumission",
+      "delta": 10,
+      "flag": "DOSSIER_COMPLET_PREMIERE_FOIS",
+      "logic": {
+        "expression": "Nb_Docs_Manquants == 0 AND Numero_Soumission == 1",
+        "required_fields": ["Nb_Docs_Manquants", "Numero_Soumission"]
+      }
+    },
+    {
+      "id": "SC-02",
+      "title": "Ancienneté du salarié > 5 ans",
+      "delta": 10,
+      "flag": "ANCIENNETE_ELEVEE",
+      "logic": {
+        "expression": "(Date_Jour - Date_Affiliation) > 5 ans",
+        "required_fields": ["Date_Jour", "Date_Affiliation"]
+      }
+    },
+    {
+      "id": "SC-03",
+      "title": "Cohérence décompte CNSS / facture",
+      "delta": 15,
+      "flag": "COHERENCE_CNSS_FACTURE",
+      "logic": {
+        "expression": "Montant_Facture == Decompte_CNSS_Selon_Bareme",
+        "required_fields": ["Montant_Facture", "Decompte_CNSS_Selon_Bareme"]
+      }
+    }
+  ]
+}

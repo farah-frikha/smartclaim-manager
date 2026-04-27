@@ -1,0 +1,292 @@
+{
+  "metadata": {
+    "title": "Règles de Validation (Agent Validation) - Assurance Groupe Tunisie",
+    "version": "1.0.0",
+    "country": "TN",
+    "language": "fr",
+    "generated_on": "2026-04-16"
+  },
+  "rules": [
+    {
+      "id": "VA-01",
+      "title": "Éligibilité du salarié affilié au contrat collectif à la date du sinistre",
+      "category": "eligibilite_assure",
+      "description": "Le salarié doit être affilié et couvert à la date du sinistre.",
+      "logic": {
+        "expression": "Date_Affiliation <= Date_Sinistre <= Date_Fin_Couverture",
+        "required_fields": ["Date_Sinistre", "Date_Affiliation", "Date_Fin_Couverture"]
+      },
+      "success_condition": "Date_Affiliation <= Date_Sinistre <= Date_Fin_Couverture",
+      "sources": [
+        "Loi n° 92-24 du 9 mars 1992, Code des assurances tunisien, Article 2",
+        "Loi n° 60-30 du 14 décembre 1960, Article 4",
+        "legislation.tn",
+        "cga.gov.tn"
+      ]
+    },
+    {
+      "id": "VA-02",
+      "title": "Date du sinistre dans la période de couverture du contrat",
+      "category": "eligibilite_assure",
+      "description": "Le sinistre doit survenir entre la date d'effet et la date de résiliation du contrat.",
+      "logic": {
+        "expression": "Date_Effet < Date_Sinistre < Date_Resiliation",
+        "required_fields": ["Date_Effet", "Date_Sinistre", "Date_Resiliation"]
+      },
+      "sources": [
+        "Loi n° 92-24, Article 7",
+        "Code des assurances tunisien, Article 131",
+        "cga.gov.tn"
+      ]
+    },
+    {
+      "id": "VA-03",
+      "title": "Correspondance catégorie professionnelle / garanties",
+      "category": "eligibilite_assure",
+      "description": "La catégorie professionnelle de l'assuré doit être éligible à la garantie demandée.",
+      "logic": {
+        "expression": "Categorie_Assure in Categories_Eligibles_Garantie",
+        "required_fields": ["Categorie_Assure", "Categories_Eligibles_Garantie"]
+      },
+      "sources": [
+        "Code du travail tunisien, Loi n° 66-27, Articles 6 à 10",
+        "Conventions collectives sectorielles tunisiennes",
+        "iort.gov.tn"
+      ]
+    },
+    {
+      "id": "VA-04",
+      "title": "Ayants droit enregistrés au contrat",
+      "category": "eligibilite_assure",
+      "description": "Vérifier le lien de parenté et les conditions d'âge/statut pour les enfants à charge.",
+      "logic": {
+        "expression": "Lien_Parente in ['Conjoint','Enfant'] AND Conditions_Age_Statut_OK",
+        "required_fields": [
+          "Lien_Parente",
+          "Age_Au_Sinistre",
+          "Statut_Etudiant",
+          "Handicap",
+          "Certificat_Scolarite"
+        ],
+        "critical_conditions": [
+          "Si Lien_Parente='Enfant' et Age_Au_Sinistre < 16 => OK",
+          "Si 16 <= Age_Au_Sinistre < 25 => Certificat_Scolarite requis",
+          "Si Handicap=true => pas de limite d'âge"
+        ]
+      },
+      "sources": [
+        "Loi n° 60-30, Article 22",
+        "Décret n° 74-270 du 28 mars 1974",
+        "cnss.nat.tn"
+      ]
+    },
+    {
+      "id": "VA-05",
+      "title": "Employeur à jour des cotisations CNSS",
+      "category": "eligibilite_assure",
+      "description": "Le dossier est suspendu si l'employeur n'est pas en règle CNSS.",
+      "logic": {
+        "expression": "Statut_Employeur_CNSS == 'ok'",
+        "required_fields": ["Statut_Employeur_CNSS"],
+        "failure_action": "suspension_dossier"
+      },
+      "sources": [
+        "Loi n° 60-30, Article 52",
+        "Circulaire CNSS n° 2018-04",
+        "cnss.nat.tn"
+      ]
+    },
+    {
+      "id": "VA-06",
+      "title": "Délai de déclaration - Sinistre santé",
+      "category": "delais_declaration",
+      "description": "Respect du délai légal (2 ans) et du délai contractuel (souvent 3 à 6 mois).",
+      "logic": {
+        "expression": "Date_Reception - Date_Sinistre <= Delai_Applicable",
+        "required_fields": ["Date_Reception", "Date_Sinistre", "Delai_Contractuel_Sante"],
+        "delay_rules": {
+          "legal_max": "2 ans",
+          "contractual_typical": "3 à 6 mois",
+          "rejection_basis": "delai_contractuel"
+        }
+      },
+      "sources": [
+        "Loi n° 92-24, Article 131",
+        "Conditions générales contrats collectifs santé",
+        "cga.gov.tn"
+      ]
+    },
+    {
+      "id": "VA-07",
+      "title": "Délai de déclaration - Arrêt de travail (prévoyance)",
+      "category": "delais_declaration",
+      "description": "Délais stricts: 3 jours pour CNSS, souvent 30 jours pour l'assureur.",
+      "logic": {
+        "expression": "Delai_CNSS_OK AND Delai_Assureur_OK",
+        "required_fields": [
+          "Date_Debut_Arret",
+          "Date_Declaration_CNSS",
+          "Date_Declaration_Assureur",
+          "Delai_Assureur_Contractuel"
+        ],
+        "delay_rules": {
+          "cnss_max": "3 jours",
+          "assureur_typical": "30 jours"
+        }
+      },
+      "sources": [
+        "Loi n° 60-30, Article 24",
+        "Décret n° 73-338 du 27 juin 1973",
+        "cnss.nat.tn",
+        "legislation.tn"
+      ]
+    },
+    {
+      "id": "VA-08",
+      "title": "Délai de déclaration - Décès",
+      "category": "delais_declaration",
+      "description": "Le capital décès est réclamable dans un délai de 2 ans (selon règles légales).",
+      "logic": {
+        "expression": "Date_Reception - Date_Deces <= Delai_Deces_Applicable",
+        "required_fields": ["Date_Reception", "Date_Deces", "Delai_Deces_Applicable"],
+        "delay_rules": {
+          "legal_max": "2 ans",
+          "contractual_possible": "6 mois (selon contrat)"
+        }
+      },
+      "sources": [
+        "Loi n° 92-24, Article 131",
+        "Code des assurances tunisien, Article 56",
+        "cga.gov.tn"
+      ]
+    },
+    {
+      "id": "VA-10",
+      "title": "Documents obligatoires - Remboursement santé",
+      "category": "completude_documentaire",
+      "description": "Présence des pièces obligatoires pour un dossier santé.",
+      "logic": {
+        "expression": "AllRequiredDocumentsPresent",
+        "required_fields": ["Documents_Fournis"],
+        "required_documents": [
+          "Decompte_CNSS",
+          "Ordonnance",
+          "Facture",
+          "Carte_CNSS"
+        ]
+      },
+      "sources": [
+        "Circulaire CGA n° 2019-12",
+        "Loi n° 60-30, Article 22",
+        "cga.gov.tn",
+        "cnss.nat.tn"
+      ]
+    },
+    {
+      "id": "VA-11",
+      "title": "Documents obligatoires - Arrêt de travail",
+      "category": "completude_documentaire",
+      "description": "Présence des pièces obligatoires pour un arrêt de travail.",
+      "logic": {
+        "expression": "AllRequiredDocumentsPresent",
+        "required_fields": ["Documents_Fournis"],
+        "required_documents": [
+          "Certificat_Arret",
+          "Attestation_Employeur_Salaire_Reference",
+          "Formulaire_Arret_Travail"
+        ]
+      },
+      "sources": [
+        "Décret n° 73-338 du 27 juin 1973, Article 5",
+        "Formulaire CNSS AT1",
+        "cnss.nat.tn"
+      ]
+    },
+    {
+      "id": "VA-12",
+      "title": "Documents obligatoires - Décès",
+      "category": "completude_documentaire",
+      "description": "Présence des pièces obligatoires pour un dossier décès.",
+      "logic": {
+        "expression": "AllRequiredDocumentsPresent",
+        "required_fields": ["Documents_Fournis"],
+        "required_documents": [
+          "Acte_Deces",
+          "Certificat_Medical_Deces",
+          "Justificatif_Qualite_Beneficiaire",
+          "Attestation_Affiliation_Defunt",
+          "RIB_Beneficiaire"
+        ]
+      },
+      "sources": [
+        "Loi n° 57-3 du 13 août 1957, Article 23",
+        "Code des assurances tunisien, Article 56",
+        "iort.gov.tn"
+      ]
+    },
+    {
+      "id": "VA-13",
+      "title": "Documents obligatoires - Invalidité",
+      "category": "completude_documentaire",
+      "description": "Présence des pièces obligatoires pour un dossier invalidité.",
+      "logic": {
+        "expression": "AllRequiredDocumentsPresent",
+        "required_fields": ["Documents_Fournis"],
+        "required_documents": [
+          "Decision_CNSS_Invalidite",
+          "Rapport_Medical",
+          "Attestation_Employeur",
+          "Formulaire_CNSS_Invalidite"
+        ]
+      },
+      "sources": [
+        "Loi n° 94-28 du 21 février 1994, Articles 15 à 22",
+        "iort.gov.tn"
+      ]
+    },
+    {
+      "id": "VA-14",
+      "title": "Exclusions légales",
+      "category": "exclusions",
+      "description": "Le sinistre ne doit pas relever d'une exclusion légale (intentionnel, guerre/émeute sans garantie spéciale, fraude).",
+      "logic": {
+        "expression": "not HasLegalExclusion",
+        "required_fields": ["Rapports_Sinistre", "Garantie_Speciale_Guerre_Emeute"],
+        "excluded_cases": [
+          "Sinistre_Intentonnel",
+          "Acte_Guerre",
+          "Emeute_Sans_Garantie_Speciale",
+          "Fraude_Averee"
+        ],
+        "extraction_hints": [
+          "Rechercher mots-clés: fraude",
+          "Rechercher mots-clés: sinistre intentionnel"
+        ]
+      },
+      "sources": [
+        "Loi n° 92-24, Article 24",
+        "cga.gov.tn"
+      ]
+    },
+    {
+      "id": "VA-15",
+      "title": "Vérification de la période de carence",
+      "category": "exclusions",
+      "description": "Le sinistre ne doit pas survenir pendant la période de carence applicable.",
+      "logic": {
+        "expression": "Date_Sinistre - Date_Affiliation >= Delai_Carence_Garantie",
+        "required_fields": ["Type_Garantie", "Date_Sinistre", "Date_Affiliation"],
+        "carence_rules": {
+          "Maternite": "9 mois",
+          "Dentaire": "6 mois",
+          "Orthodontie": "6 à 12 mois",
+          "Hospitalisation_Programmee": "3 mois"
+        }
+      },
+      "sources": [
+        "Loi n° 92-24, Article 7",
+        "Conditions générales du contrat collectif"
+      ]
+    }
+  ]
+}

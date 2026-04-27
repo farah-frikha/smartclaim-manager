@@ -1,0 +1,51 @@
+{
+  "metadata": {
+    "title": "Règles de l'Agent Coordinateur - Assurance Groupe Tunisie",
+    "version": "1.0.0",
+    "country": "TN",
+    "language": "fr",
+    "generated_on": "2026-04-16"
+  },
+  "routing_rules": [
+    {
+      "id": "RC-01",
+      "condition": "Validation_Obligatoire_Echouee == true",
+      "action": "go_to_decision_skip_scoring"
+    },
+    {
+      "id": "RC-02",
+      "condition": "Statut_OCR == erreur",
+      "action": "return_to_capture_stop_flow"
+    },
+    {
+      "id": "RC-03",
+      "condition": "Score_Confiance_LLM_Champ_Critique < 0.6",
+      "action": "require_human_confirmation_before_validation"
+    },
+    {
+      "id": "RC-04",
+      "condition": "Decision == complement_requis",
+      "action": "notify_assure_and_set_status_en_attente_complement"
+    }
+  ],
+  "sla_rules": [
+    {
+      "id": "RC-05",
+      "kpi": "decision_deadline_prevoyance",
+      "condition": "Date_Decision - Date_Reception <= 30 jours",
+      "action_on_breach": "alerte_supervision"
+    },
+    {
+      "id": "RC-06",
+      "kpi": "accuse_reception_deadline",
+      "condition": "Date_Accuse_Reception - Date_Reception <= 48 heures",
+      "action_on_breach": "alerte_supervision"
+    },
+    {
+      "id": "RC-07",
+      "kpi": "relaunch_waiting_complement",
+      "condition": "Statut == en_attente_complement AND Duree_Attente > 15 jours",
+      "action": "relance_automatique_assure"
+    }
+  ]
+}

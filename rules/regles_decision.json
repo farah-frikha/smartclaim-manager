@@ -1,0 +1,74 @@
+{
+  "metadata": {
+    "title": "Règles de l'Agent Décision - Assurance Groupe Tunisie",
+    "version": "1.0.0",
+    "country": "TN",
+    "language": "fr",
+    "generated_on": "2026-04-16"
+  },
+  "threshold_rules": [
+    {
+      "id": "RD-01",
+      "condition": "Score >= 70",
+      "decision": "accepter_automatiquement"
+    },
+    {
+      "id": "RD-02",
+      "condition": "40 <= Score < 70",
+      "decision": "demander_complements"
+    },
+    {
+      "id": "RD-03",
+      "condition": "Score < 40",
+      "decision": "refuser_automatiquement"
+    }
+  ],
+  "blocking_rules": [
+    {
+      "id": "RD-04",
+      "condition": "Flag == INELIGIBILITE",
+      "decision": "refus_immediat",
+      "overrides_score": true
+    },
+    {
+      "id": "RD-05",
+      "condition": "Flag == SOUS_FRANCHISE",
+      "decision": "refus_immediat",
+      "overrides_score": true
+    },
+    {
+      "id": "RD-06",
+      "condition": "Flag == DEPASSEMENT_SALAIRE",
+      "decision": "refus_partiel_sur_partie_excedentaire",
+      "overrides_score": true
+    },
+    {
+      "id": "RD-07",
+      "condition": "Validation_Obligatoire_Echouee == true",
+      "decision": "refus_immediat",
+      "overrides_score": true
+    }
+  ],
+  "human_escalation_rules": [
+    {
+      "id": "RD-08",
+      "condition": "Montant_Reclame > Plafond_Escalade",
+      "escalation": "obligatoire"
+    },
+    {
+      "id": "RD-09",
+      "condition": "45 <= Score <= 55",
+      "escalation": "recommandee"
+    },
+    {
+      "id": "RD-10",
+      "condition": "Flag == INCOHERENCE_MEDICALE",
+      "escalation": "obligatoire"
+    },
+    {
+      "id": "RD-11",
+      "condition": "Premier_Sinistre_Type == PREV_DECES",
+      "escalation": "obligatoire"
+    }
+  ]
+}
