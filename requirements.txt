@@ -1,0 +1,21 @@
+# OCR
+paddleocr==2.7.3
+paddlepaddle==2.6.2
+opencv-python==4.6.0.66
+# LLM et orchestration
+ollama==0.3.3
+langgraph==0.2.0
+langchain-core==0.2.27
+# Traitement documents
+pymupdf==1.24.0
+python-docx==1.1.0
+Pillow==10.3.0
+# Interface
+streamlit==1.35.0
+
+# Base de données
+# SQLite est natif Python — aucune installation
+
+# Utilitaires
+python-dotenv==1.0.1
+loguru==0.7.2

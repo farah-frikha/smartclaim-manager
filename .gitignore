@@ -1,0 +1,17 @@
+# Environnement virtuel
+smartclaim-env/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Data uploads (fichiers personnels)
+data/uploads/
+data/dossiers_test/
+
+# VS Code
+.vscode/
+
+# Variables d'environnement
+.env
