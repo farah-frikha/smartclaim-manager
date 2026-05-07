@@ -62,11 +62,11 @@ print(f"{'Composant':<25} {'Statut':<10} Détail")
 print("─" * 65)
 tous_ok = True
 for nom, ok, detail in tests:
-    statut = "✅ OK" if ok else "❌ FAIL"
+    statut = " OK" if ok else " FAIL"
     if not ok:
         tous_ok = False
     print(f"{nom:<25} {statut:<10} {detail}")
 
-print("\n" + ("✅ Installation complète — prêt à coder !" 
+print("\n" + (" Installation complète — prêt à coder !" 
               if tous_ok else 
-              "❌ Certains composants manquent — relancez pip install"))
+              " Certains composants manquent — relancez pip install"))
