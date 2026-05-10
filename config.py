@@ -26,7 +26,7 @@ COORDINATION_RULES = RULES_DIR / "regles_coordinateur.json"
 OLLAMA_MODEL   = "qwen2.5:7b-instruct"
 OLLAMA_URL     = "http://localhost:11434"
 LLM_MAX_TOKENS = 1000
-LLM_TEMPERATURE = 0.0  # 0 = déterministe, important pour les extractions
+LLM_TEMPERATURE = 0.0  
 
 # OCR
 OCR_LANGUAGE   = "fr"

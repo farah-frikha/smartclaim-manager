@@ -1,74 +1,142 @@
 {
   "metadata": {
-    "title": "Règles de l'Agent Décision - Assurance Groupe Tunisie",
-    "version": "1.0.0",
+    "title": "Règles de l'Agent Décision — Assurance Groupe Tunisie",
+    "version": "1.1.0",
     "country": "TN",
     "language": "fr",
-    "generated_on": "2026-04-16"
+    "generated_on": "2026-04-16",
+    "sources": [
+      "Loi n°92-24 du 9 mars 1992 — Code des assurances tunisien",
+      "Circulaire CGA n°2020-08 — Systèmes automatisés de décision",
+      "Loi n°60-30 — Sécurité sociale CNSS"
+    ]
   },
-  "threshold_rules": [
-    {
-      "id": "RD-01",
-      "condition": "Score >= 70",
-      "decision": "accepter_automatiquement"
-    },
-    {
-      "id": "RD-02",
-      "condition": "40 <= Score < 70",
-      "decision": "demander_complements"
-    },
-    {
-      "id": "RD-03",
-      "condition": "Score < 40",
-      "decision": "refuser_automatiquement"
-    }
+
+  "seuils": {
+    "accepter": 70,
+    "complement": 40
+  },
+
+  "flags_refus_immediat": [
+    "INELIGIBILITE",
+    "SOUS_FRANCHISE",
+    "SINISTRE_HORS_CONTRAT"
   ],
-  "blocking_rules": [
-    {
-      "id": "RD-04",
-      "condition": "Flag == INELIGIBILITE",
-      "decision": "refus_immediat",
-      "overrides_score": true
-    },
-    {
-      "id": "RD-05",
-      "condition": "Flag == SOUS_FRANCHISE",
-      "decision": "refus_immediat",
-      "overrides_score": true
-    },
-    {
-      "id": "RD-06",
-      "condition": "Flag == DEPASSEMENT_SALAIRE",
-      "decision": "refus_partiel_sur_partie_excedentaire",
-      "overrides_score": true
-    },
-    {
-      "id": "RD-07",
-      "condition": "Validation_Obligatoire_Echouee == true",
-      "decision": "refus_immediat",
-      "overrides_score": true
-    }
+
+  "flags_complement_obligatoire": [
+    "DEPASSEMENT_SALAIRE",
+    "DECLARATION_TARDIVE_AT",
+    "INCOHERENCE_MEDICALE",
+    "DOCUMENT_ETRANGER",
+    "FREQUENCE_ANORMALE",
+    "CARENCE_SUSPECTE"
   ],
-  "human_escalation_rules": [
-    {
-      "id": "RD-08",
-      "condition": "Montant_Reclame > Plafond_Escalade",
-      "escalation": "obligatoire"
+
+  "escalade_humaine": {
+    "montant_seuil": 5000,
+    "score_zone_grise_min": 45,
+    "score_zone_grise_max": 55,
+    "flags_escalade": [
+      "INCOHERENCE_MEDICALE",
+      "DOCUMENT_ETRANGER",
+      "PREMIER_DECES"
+    ]
+  },
+
+  "messages": {
+    "accepter": {
+      "client": "Votre dossier a été accepté. Vous serez contacté sous 48h pour les modalités de remboursement.",
+      "interne": "Dossier validé automatiquement — score suffisant, aucune anomalie bloquante."
     },
-    {
-      "id": "RD-09",
-      "condition": "45 <= Score <= 55",
-      "escalation": "recommandee"
+    "complement_requis": {
+      "client": "Votre dossier nécessite des informations complémentaires. Notre équipe vous contactera dans les 5 jours ouvrés.",
+      "interne": "Score intermédiaire ou flag nécessitant vérification humaine."
     },
-    {
-      "id": "RD-10",
-      "condition": "Flag == INCOHERENCE_MEDICALE",
-      "escalation": "obligatoire"
-    },
-    {
-      "id": "RD-11",
-      "condition": "Premier_Sinistre_Type == PREV_DECES",
-      "escalation": "obligatoire"
+    "refuser": {
+      "client": "Votre dossier ne peut pas être pris en charge dans l'état actuel. Vous pouvez contacter notre service client.",
+      "interne": "Refus automatique — score insuffisant ou anomalie bloquante détectée."
     }
-  ]
+  },
+
+  "regles_documentees": {
+    "description": "Section documentaire uniquement — non lue par le moteur",
+    "threshold_rules": [
+      {
+        "id": "RD-01",
+        "source": "Circulaire CGA n°2020-08",
+        "condition": "Score >= 70",
+        "decision": "accepter_automatiquement"
+      },
+      {
+        "id": "RD-02",
+        "source": "Circulaire CGA n°2020-08",
+        "condition": "40 <= Score < 70",
+        "decision": "demander_complements"
+      },
+      {
+        "id": "RD-03",
+        "source": "Circulaire CGA n°2020-08",
+        "condition": "Score < 40",
+        "decision": "refuser_automatiquement"
+      }
+    ],
+    "blocking_rules": [
+      {
+        "id": "RD-04",
+        "source": "Loi n°92-24, Article 7",
+        "condition": "Flag INELIGIBILITE présent",
+        "decision": "refus_immediat",
+        "overrides_score": true
+      },
+      {
+        "id": "RD-05",
+        "source": "Loi n°92-24, Article 36 — Principe indemnitaire",
+        "condition": "Flag SOUS_FRANCHISE présent",
+        "decision": "refus_immediat",
+        "overrides_score": true
+      },
+      {
+        "id": "RD-06",
+        "source": "Décret n°73-338, Article 4 — Calcul IJ CNSS",
+        "condition": "Flag DEPASSEMENT_SALAIRE présent",
+        "decision": "complement_requis — recalcul montant obligatoire",
+        "overrides_score": true,
+        "note": "Pas un refus total — renvoi pour recalcul du montant net"
+      },
+      {
+        "id": "RD-07",
+        "source": "Loi n°92-24, Articles 24 et 131",
+        "condition": "Règle obligatoire de validation échouée",
+        "decision": "refus_immediat",
+        "overrides_score": true
+      }
+    ],
+    "human_escalation_rules": [
+      {
+        "id": "RD-08",
+        "source": "Circulaire CGA n°2020-08 — Seuils financiers",
+        "condition": "Montant réclamé > 5000 TND",
+        "escalation": "obligatoire"
+      },
+      {
+        "id": "RD-09",
+        "source": "Bonne pratique — zone d'ambiguïté décisionnelle",
+        "condition": "45 <= Score <= 55",
+        "escalation": "recommandee"
+      },
+      {
+        "id": "RD-10",
+        "source": "Décret n°73-338, Article 8 — Rôle médecin conseil CNSS",
+        "condition": "Flag INCOHERENCE_MEDICALE présent",
+        "escalation": "obligatoire"
+      },
+      {
+        "id": "RD-11",
+        "source": "Loi n°92-24, Article 56 — Garantie décès",
+        "condition": "Premier sinistre de type PREV_DECES",
+        "escalation": "obligatoire",
+        "note": "Transformé en flag PREMIER_DECES par le scoring engine"
+      }
+    ]
+  }
 }

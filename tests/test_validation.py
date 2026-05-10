@@ -4,7 +4,6 @@ sys.path.insert(0, ".")
 
 from engines.validation_engine import executer_validation, afficher_rapport_validation
 
-# Dossier de test fictif
 dossier_test = {
     "date_sinistre":          "2024-01-10",
     "date_declaration":       "2024-01-12",

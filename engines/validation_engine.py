@@ -10,10 +10,7 @@ from config import VALIDATION_RULES
 # SECTION 1 — CHARGEMENT DES RÈGLES
 
 def charger_regles_validation(chemin: str = str(VALIDATION_RULES)) -> list:
-    """
-    Charge les règles depuis le fichier JSON.
-    Retourne la liste des règles.
-    """
+
     try:
         with open(chemin, encoding="utf-8") as f:
             data = json.load(f)
