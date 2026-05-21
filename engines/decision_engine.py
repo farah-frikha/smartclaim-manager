@@ -9,11 +9,15 @@ from loguru import logger
 from config import DECISION_RULES, SEUIL_ACCEPTER, SEUIL_COMPLEMENT
 
 # SECTION 1 — CHARGEMENT DES RÈGLES
+_cache_regles = {}
 def charger_regles_decision(chemin: str = str(DECISION_RULES)) -> dict:
+    if chemin in _cache_regles:
+        return _cache_regles[chemin]
     try:
         with open(chemin, encoding="utf-8") as f:
             config = json.load(f)
         logger.info(f"✓ Règles de décision chargées depuis {chemin}")
+        _cache_regles[chemin] = config
         return config
     except FileNotFoundError:
         logger.warning(f"  Fichier JSON non trouvé : {chemin} — utilisation des valeurs par défaut")

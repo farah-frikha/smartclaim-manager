@@ -7,13 +7,17 @@ import json
 from config import SCORING_RULES, SCORE_BASE, SEUIL_ACCEPTER, SEUIL_COMPLEMENT
 
 # SECTION 1 — CHARGEMENT DES RÈGLES
-
+_cache_regles = {}
 def charger_regles_scoring(chemin: str = str(SCORING_RULES)) -> dict:
+    if chemin in _cache_regles:
+        return _cache_regles[chemin]
+
     try:
         with open(chemin, encoding="utf-8") as f:
             config = json.load(f)
         nb = len(config.get("regles", []))
         print(f"{nb} règles de scoring chargées depuis {chemin}")
+        _cache_regles[chemin] = config
         return config
     except FileNotFoundError:
         print(f"Fichier JSON non trouvé : {chemin}")

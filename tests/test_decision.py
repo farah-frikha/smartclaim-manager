@@ -1,13 +1,10 @@
-# tests/test_scoring.py
+# tests/test_decision.py
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from engines.decision_engine import executer_decision, afficher_rapport_decision
 from config import SEUIL_COMPLEMENT
-
-
-# SECTION 5 — TEST
 if __name__ == "__main__":
 
     print("TEST 1 — Score élevé, aucun flag → ACCEPTER")
@@ -48,6 +45,3 @@ if __name__ == "__main__":
     afficher_rapport_decision(r7)
     assert r7["necessite_validation_humaine"] == True
 
-    # Résumé
-
-    print(" Tous les tests passent — Decision Engine validé")

@@ -8,14 +8,17 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from config import VALIDATION_RULES
 
 # SECTION 1 — CHARGEMENT DES RÈGLES
+_cache_regles = {}
 
 def charger_regles_validation(chemin: str = str(VALIDATION_RULES)) -> list:
-
+    if chemin in _cache_regles:
+        return _cache_regles[chemin]
     try:
         with open(chemin, encoding="utf-8") as f:
             data = json.load(f)
             regles = data["rules"] if isinstance(data, dict) else data
         print(f" {len(regles)} règles chargées depuis {chemin}")
+        _cache_regles[chemin] = regles
         return regles
     except FileNotFoundError:
         print(f"  Fichier JSON non trouvé : {chemin}")
