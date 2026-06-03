@@ -87,5 +87,5 @@ if __name__ == "__main__":
     for agent, stats in metriques.items():
         if isinstance(stats, dict) and "moy_ms" in stats:
             ok = stats["moy_ms"] < seuil_ms
-            print(f"  {'✅' if ok else '❌'} {agent:<20} moy={stats['moy_ms']}ms "
+            print(f" {agent:<20} moy={stats['moy_ms']}ms "
                   f"p95={stats['p95_ms']}ms (seuil={seuil_ms}ms)")
