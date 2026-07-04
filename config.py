@@ -41,3 +41,7 @@ SEUIL_COMPLEMENT = 40
 # Streamlit
 APP_TITLE = "SmartClaim Manager"
 APP_PORT  = 8501
+# Authentification JWT
+JWT_SECRET_KEY = "smartclaim-secret-key-a-changer-en-production-2026"
+JWT_ALGORITHM = "HS256"
+JWT_EXPIRATION_MINUTES = 480  # 8 heures

@@ -52,53 +52,15 @@ TYPES_SINISTRES_VALIDES = [
 # SECTION 2 — PROMPT FEW-SHOT
 # ────────────────────────────────────────────────────────────
 
-PROMPT_TEMPLATE = """Tu es un assistant spécialisé dans l'extraction d'informations depuis des documents d'assurance groupe tunisienne.
-
-Voici le texte extrait d'un document d'assurance :
----
-{texte_ocr}
----
-
-Extrais exactement les informations suivantes et retourne UNIQUEMENT un objet JSON valide.
-N'ajoute aucun texte avant ou après le JSON. Pas de markdown, pas de backticks.
-
-Champs à extraire :
-- nom_assure : nom de famille de l'assuré (string)
-- prenom_assure : prénom de l'assuré (string ou null)
-- numero_cnss : numéro CNSS/sécurité sociale (string)
-- numero_contrat : numéro de police ou contrat d'assurance (string)
-- date_sinistre : date du sinistre au format YYYY-MM-DD (string)
-- type_sinistre : UN SEUL parmi {types_valides} (string)
-- montant_reclame : montant total réclamé en TND, nombre décimal (float)
-- description : brève description du sinistre (string ou null)
-- date_declaration : date de déclaration au format YYYY-MM-DD (string ou null)
-- numero_dossier : numéro de dossier interne si présent (string ou null)
-
-Règles IMPORTANTES :
-1. Si une information est absente, mets null (jamais de chaîne vide)
-2. Les dates DOIVENT être au format YYYY-MM-DD
-3. Les montants sont des nombres (pas de texte, pas de symbole TND)
-4. Le type_sinistre DOIT être exactement l'un des codes fournis
-5. Ne jamais inventer une information absente du texte
-
-EXEMPLES :
-
-Exemple 1 — Accident auto :
-Texte : "Mohamed Ben Salah, CNSS 145789632, contrat STAR-AUTO-2024-00847, accident le 15/03/2026, montant 2800 TND"
-JSON :
-{{"nom_assure": "Ben Salah", "prenom_assure": "Mohamed", "numero_cnss": "145789632", "numero_contrat": "STAR-AUTO-2024-00847", "date_sinistre": "2026-03-15", "type_sinistre": "AUTO_ACCIDENT", "montant_reclame": 2800.0, "description": "Accident automobile", "date_declaration": null, "numero_dossier": null}}
-
-Exemple 2 — Arrêt de travail :
-Texte : "Fatma Trabelsi, N° affiliation 987654321, police COMAR-PREV-2023-00123, arrêt maladie du 10/01/2026 au 20/01/2026, indemnité 450 TND"
-JSON :
-{{"nom_assure": "Trabelsi", "prenom_assure": "Fatma", "numero_cnss": "987654321", "numero_contrat": "COMAR-PREV-2023-00123", "date_sinistre": "2026-01-10", "type_sinistre": "PREV_ARRET", "montant_reclame": 450.0, "description": "Arrêt maladie 10 jours", "date_declaration": null, "numero_dossier": null}}
-
-Exemple 3 — Consultation médicale :
-Texte : "Sami Gharbi, CNSS 112233445, contrat GAT-SANTE-2025-00789, consultation médecin généraliste le 05/04/2026, facture 90 TND"
-JSON :
-{{"nom_assure": "Gharbi", "prenom_assure": "Sami", "numero_cnss": "112233445", "numero_contrat": "GAT-SANTE-2025-00789", "date_sinistre": "2026-04-05", "type_sinistre": "SANTE_CONSUL", "montant_reclame": 90.0, "description": "Consultation médecin généraliste", "date_declaration": null, "numero_dossier": null}}
-
-Maintenant extrais les informations du document fourni :"""
+def charger_prompt_template() -> str:
+    """Charge le template de prompt depuis le fichier texte."""
+    chemin = PROMPTS_DIR / "extraction_prompt.txt"
+    try:
+        with open(chemin, encoding="utf-8") as f:
+            return f.read()
+    except FileNotFoundError:
+        logger.error(f"Prompt introuvable : {chemin}")
+        raise
 
 
 def construire_prompt(texte_ocr: str) -> str:
@@ -107,9 +69,10 @@ def construire_prompt(texte_ocr: str) -> str:
     et la liste des types de sinistres valides.
     """
     # Tronquer si trop long (limite contexte LLM)
+    TEMPLATE = charger_prompt_template()
     texte_tronque = texte_ocr[:6000] if len(texte_ocr) > 6000 else texte_ocr
 
-    return PROMPT_TEMPLATE.format(
+    return TEMPLATE.format(
         texte_ocr=texte_tronque,
         types_valides=", ".join(TYPES_SINISTRES_VALIDES)
     )
