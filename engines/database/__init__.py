@@ -37,6 +37,7 @@ from engines.database.crud_resultats import (
 # CRUD utilisateurs
 from engines.database.crud_utilisateurs import (
     creer_utilisateur,
+    creer_employe_et_utilisateur,
     obtenir_utilisateur_par_email,
     obtenir_utilisateur_par_id,
     mettre_a_jour_derniere_connexion,
@@ -54,7 +55,7 @@ __all__ = [
     # Résultats
     "sauvegarder_validation", "sauvegarder_scoring", "sauvegarder_decision",
     # Utilisateurs
-    "creer_utilisateur", "obtenir_utilisateur_par_email",
+    "creer_utilisateur", "creer_employe_et_utilisateur", "obtenir_utilisateur_par_email",
     "obtenir_utilisateur_par_id", "mettre_a_jour_derniere_connexion",
     "lister_utilisateurs", "desactiver_utilisateur",
 ]

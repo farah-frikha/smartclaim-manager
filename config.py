@@ -1,6 +1,10 @@
 # config.py
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Charge les variables depuis le fichier .env
+load_dotenv()
 
 # Racine du projet
 BASE_DIR = Path(__file__).parent
@@ -26,7 +30,7 @@ COORDINATION_RULES = RULES_DIR / "regles_coordinateur.json"
 OLLAMA_MODEL   = "qwen2.5:7b-instruct"
 OLLAMA_URL     = "http://localhost:11434"
 LLM_MAX_TOKENS = 1000
-LLM_TEMPERATURE = 0.0  
+LLM_TEMPERATURE = 0.0
 
 # OCR
 OCR_LANGUAGE   = "fr"
@@ -38,10 +42,7 @@ SCORE_BASE     = 100
 SEUIL_ACCEPTER = 70
 SEUIL_COMPLEMENT = 40
 
-# Streamlit
-APP_TITLE = "SmartClaim Manager"
-APP_PORT  = 8501
 # Authentification JWT
-JWT_SECRET_KEY = "smartclaim-secret-key-a-changer-en-production-2026"
-JWT_ALGORITHM = "HS256"
-JWT_EXPIRATION_MINUTES = 480  # 8 heures
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-fallback-non-securise-ne-pas-utiliser-en-prod")
+JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
+JWT_EXPIRATION_MINUTES = int(os.getenv("JWT_EXPIRATION_MINUTES", "480"))  # 8 heures

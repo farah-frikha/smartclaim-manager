@@ -1,17 +1,24 @@
-# Environnement virtuel
+# Environnement Python
 smartclaim-env/
-
-# Python
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
+*.egg-info/
+.pytest_cache/
 
-# Data uploads (fichiers personnels)
-data/uploads/
-data/dossiers_test/
-
-# VS Code
-.vscode/
-
-# Variables d'environnement
+# Secrets
 .env
+
+# Base de données et uploads (données locales)
+data/smartclaim.db
+data/uploads/*
+data/contrats/*
+
+# Scripts jetables de migration
+fix_*.py
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/

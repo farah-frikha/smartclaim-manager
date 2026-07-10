@@ -13,6 +13,7 @@ from fastapi import APIRouter, HTTPException, status, Depends
 
 from api.auth.auth    import (
     hash_mot_de_passe,
+    verifier_mot_de_passe,
     authentifier_utilisateur,
     creer_token_acces
 )
@@ -20,13 +21,16 @@ from api.auth.schemas import (
     InscriptionRequest,
     ConnexionRequest,
     TokenResponse,
+    ChangementMotDePasseRequest,
     UtilisateurResponse
 )
 from api.dependencies import get_utilisateur_actuel, exiger_roles
 from engines.database import (
     creer_utilisateur,
     mettre_a_jour_derniere_connexion,
-    lister_utilisateurs
+    lister_utilisateurs ,
+    obtenir_utilisateur_par_id ,
+    get_connection
 )
 
 router = APIRouter(
@@ -35,16 +39,13 @@ router = APIRouter(
 )
 
 
+
 @router.post(
     "/register",
     summary="Créer un compte utilisateur",
     description="Crée un nouveau compte. En production, réservé à l'ADMIN."
 )
 def inscription(donnees: InscriptionRequest):
-    """
-    Crée un nouvel utilisateur dans la base.
-    Hash le mot de passe avant de le stocker — jamais en clair.
-    """
     roles_valides = ["EMPLOYE", "GESTIONNAIRE", "ADMIN"]
     if donnees.role not in roles_valides:
         raise HTTPException(
@@ -54,13 +55,28 @@ def inscription(donnees: InscriptionRequest):
 
     hash_pwd = hash_mot_de_passe(donnees.mot_de_passe)
 
-    resultat = creer_utilisateur(
-        email            = donnees.email,
-        mot_de_passe_hash = hash_pwd,
-        role             = donnees.role,
-        nom_complet      = donnees.nom_complet,
-        employe_id       = donnees.employe_id
-    )
+    if donnees.role == "EMPLOYE":
+        if not donnees.numero_cnss:
+            raise HTTPException(
+                status_code=400,
+                detail="numero_cnss obligatoire pour un compte EMPLOYE"
+            )
+
+        from engines.database import creer_employe_et_utilisateur
+        resultat = creer_employe_et_utilisateur(
+            email=donnees.email,
+            mot_de_passe_hash=hash_pwd,
+            nom_complet=donnees.nom_complet,
+            numero_cnss=donnees.numero_cnss,
+        )
+    else:
+        resultat = creer_utilisateur(
+            email=donnees.email,
+            mot_de_passe_hash=hash_pwd,
+            role=donnees.role,
+            nom_complet=donnees.nom_complet,
+            employe_id=None
+        )
 
     if not resultat["succes"]:
         raise HTTPException(status_code=400, detail=resultat["message"])
@@ -133,3 +149,41 @@ def liste_utilisateurs(
 ):
     """Retourne la liste de tous les utilisateurs du système."""
     return lister_utilisateurs()
+@router.put(
+    "/mot-de-passe",
+    summary="Changer son mot de passe",
+    description="Permet à l'utilisateur connecté de modifier son mot de passe."
+)
+def changer_mot_de_passe(
+    donnees: ChangementMotDePasseRequest,
+    utilisateur: dict = Depends(get_utilisateur_actuel)
+):
+    # Récupérer l'utilisateur complet avec son hash actuel
+    user_complet = obtenir_utilisateur_par_id(utilisateur["utilisateur_id"])
+    if not user_complet:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+
+    # Vérifier l'ancien mot de passe
+    if not verifier_mot_de_passe(
+        donnees.ancien_mot_de_passe,
+        user_complet["mot_de_passe_hash"]
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="Mot de passe actuel incorrect"
+        )
+
+    # Hasher et sauvegarder le nouveau
+    nouveau_hash = hash_mot_de_passe(donnees.nouveau_mot_de_passe)
+    conn = get_connection()
+    try:
+        conn.execute("""
+            UPDATE utilisateurs
+            SET mot_de_passe_hash = ?, updated_at = datetime('now')
+            WHERE utilisateur_id = ?
+        """, (nouveau_hash, utilisateur["utilisateur_id"]))
+        conn.commit()
+    finally:
+        conn.close()
+
+    return {"message": "Mot de passe modifié avec succès"}

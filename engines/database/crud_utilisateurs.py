@@ -146,3 +146,66 @@ def desactiver_utilisateur(utilisateur_id: int) -> bool:
         return False
     finally:
         conn.close()
+def creer_employe_et_utilisateur(
+    email: str,
+    mot_de_passe_hash: str,
+    nom_complet: str,
+    numero_cnss: str,
+    employeur_id: int = 1
+) -> dict:
+    """
+    Crée un employé ET son compte utilisateur en une seule transaction.
+
+    Utilisé quand role=EMPLOYE lors de l'inscription — garantit
+    qu'un compte EMPLOYE a toujours un employe_id valide.
+    """
+    conn = get_connection()
+    try:
+        parties = nom_complet.strip().split(" ", 1)
+        prenom  = parties[0]
+        nom     = parties[1] if len(parties) > 1 else parties[0]
+
+        cursor = conn.execute("""
+            INSERT INTO employes (
+                employeur_id, numero_cnss, nom, prenom
+            ) VALUES (?, ?, ?, ?)
+        """, (employeur_id, numero_cnss, nom, prenom))
+        employe_id = cursor.lastrowid
+
+        cursor = conn.execute("""
+            INSERT INTO utilisateurs (
+                email, mot_de_passe_hash, role,
+                nom_complet, employe_id
+            ) VALUES (?, ?, 'EMPLOYE', ?, ?)
+        """, (email, mot_de_passe_hash, nom_complet, employe_id))
+        utilisateur_id = cursor.lastrowid
+
+        conn.commit()
+        logger.success(
+            f"Employé + utilisateur créés — "
+            f"employe_id={employe_id}, utilisateur_id={utilisateur_id}"
+        )
+
+        return {
+            "succes":         True,
+            "utilisateur_id": utilisateur_id,
+            "employe_id":     employe_id,
+            "message":        "Compte employé créé avec succès"
+        }
+
+    except sqlite3.IntegrityError as e:
+        conn.rollback()
+        logger.warning(f"Erreur intégrité : {e}")
+        return {
+            "succes": False, "utilisateur_id": None, "employe_id": None,
+            "message": "Cet email ou ce numéro CNSS est déjà utilisé"
+        }
+    except Exception as e:
+        conn.rollback()
+        logger.error(f"Erreur creer_employe_et_utilisateur : {e}")
+        return {
+            "succes": False, "utilisateur_id": None, "employe_id": None,
+            "message": str(e)
+        }
+    finally:
+        conn.close()

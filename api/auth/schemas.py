@@ -8,24 +8,26 @@ from typing import Optional
 
 
 class InscriptionRequest(BaseModel):
-    """Données requises pour créer un nouveau compte."""
     email:        EmailStr
-    mot_de_passe: str      = Field(min_length=6,  description="Minimum 6 caractères")
-    nom_complet:  str      = Field(min_length=2,  description="Nom et prénom")
-    role:         str      = Field(default="EMPLOYE", description="EMPLOYE, GESTIONNAIRE ou ADMIN")
-    employe_id:   Optional[int] = Field(default=None, description="Lien vers la table employes")
+    mot_de_passe: str = Field(min_length=6)
+    nom_complet:  str = Field(min_length=2)
+    role:         str = Field(default="EMPLOYE")
+    numero_cnss:  Optional[str] = Field(
+        default=None,
+        description="Obligatoire si role=EMPLOYE"
+    )
+    employe_id:   Optional[int] = None
 
     class Config:
         json_schema_extra = {
             "example": {
-                "email":        "farah.ben@assurance.tn",
-                "mot_de_passe": "monmdp123",
-                "nom_complet":  "Farah Ben Ali",
+                "email":        "ahmed@assurance.tn",
+                "mot_de_passe": "motdepasse123",
+                "nom_complet":  "Ahmed Trabelsi",
                 "role":         "EMPLOYE",
-                "employe_id":   None
+                "numero_cnss":  "112233445"
             }
         }
-
 
 class ConnexionRequest(BaseModel):
     """Données requises pour se connecter."""
@@ -57,3 +59,6 @@ class UtilisateurResponse(BaseModel):
     actif:              int
     derniere_connexion: Optional[str]
     created_at:         str
+class ChangementMotDePasseRequest(BaseModel):
+    ancien_mot_de_passe:  str = Field(min_length=1)
+    nouveau_mot_de_passe: str = Field(min_length=6)    

@@ -91,10 +91,12 @@ async def upload_dossier(
 
     # ── Pipeline IA ──────────────────────────────────────────
     try:
-        resultat = traiter_dossier(str(chemin))
+        resultat = traiter_dossier(
+            str(chemin),
+            employe_id=utilisateur.get("employe_id") or 1
+        )
     except Exception as e:
-        import traceback
-        logger.error(f"Erreur pipeline : {traceback.format_exc()}")
+        logger.error(f"Erreur pipeline : {e}")
         raise HTTPException(
             status_code=500,
             detail=f"Erreur lors du traitement : {str(e)}"

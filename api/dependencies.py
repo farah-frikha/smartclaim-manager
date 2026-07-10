@@ -1,22 +1,31 @@
 # api/dependencies.py
+"""
+Dépendances FastAPI partagées par tous les domaines.
+HTTPBearer remplace OAuth2PasswordBearer pour que Swagger UI
+affiche un simple champ "Value" au lieu du formulaire OAuth2.
+"""
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+# HTTPBearer — dit à Swagger UI d'afficher un champ "Value" simple
+# OAuth2PasswordBearer — affichait un formulaire username/password (incorrect)
+security = HTTPBearer()
 
 
 async def get_utilisateur_actuel(
-    token: str = Depends(oauth2_scheme)
+    credentials: HTTPAuthorizationCredentials = Depends(security)
 ) -> dict:
     """
     Extrait et valide l'utilisateur depuis le token JWT.
-    Import local de verifier_token pour éviter la circularité.
+    credentials.credentials contient le token sans le préfixe "Bearer ".
+    Swagger UI ajoute "Bearer " automatiquement — vous collez juste le token.
     """
-    from api.auth.auth import verifier_token   # ← import local ici
+    from api.auth.auth import verifier_token
+    token   = credentials.credentials
     payload = verifier_token(token)
     return {
         "utilisateur_id": payload.get("utilisateur_id"),
