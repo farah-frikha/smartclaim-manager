@@ -125,6 +125,7 @@ CREATE TABLE IF NOT EXISTS dossiers_sinistres (
     montant_cnss_rembourse REAL DEFAULT 0,
     nb_sinistres_anterieurs_12mois INTEGER DEFAULT 0,
     statut_global TEXT DEFAULT 'recu',
+    domaine TEXT DEFAULT 'AUTO',
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (employe_id)

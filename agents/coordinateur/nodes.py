@@ -14,10 +14,11 @@ import time
 import sqlite3
 from datetime import datetime
 from loguru import logger
-
+from agents.classification import classifier_domaine
 from agents.capture    import executer_capture
 from agents.extraction import executer_extraction
 from engines.validation import executer_validation
+from engines.validation.domaines import get_regles_domaine
 from engines.scoring    import executer_scoring
 from engines.decision   import executer_decision
 from engines.database import (
@@ -50,6 +51,9 @@ def noeud_capture(etat: EtatDossier) -> EtatDossier:
                     f"Capture : {resultat.get('message')}"
                 ]
             }
+        texte_ocr = resultat.get("texte_complet", "")
+        classification = classifier_domaine(texte_ocr)
+        domaine = classification["domaine"]
 
         ref  = generer_reference_dossier()
         conn = get_connection()
@@ -58,10 +62,10 @@ def noeud_capture(etat: EtatDossier) -> EtatDossier:
 
         cursor = conn.execute("""
             INSERT INTO dossiers_sinistres (
-                reference_dossier, employe_id, contrat_id,
+                reference_dossier, employe_id, contrat_id, domaine,
                 type_sinistre_id, date_sinistre, statut_global
-            ) VALUES (?, ?, 1, 1, date('now'), 'en_traitement')
-        """, (ref, employe_id))
+            ) VALUES (?, ?, 1, ?, date('now'), 'en_traitement')
+        """, (ref, employe_id, domaine))
         dossier_id = cursor.lastrowid
         conn.commit()
         conn.close()
@@ -72,12 +76,22 @@ def noeud_capture(etat: EtatDossier) -> EtatDossier:
             f"Capture OK — {resultat['nb_mots_total']} mots, "
             f"confiance={resultat['score_confiance']}, {duree}ms"
         )
+        texte_ocr = resultat.get("texte_complet", "")
+        classification = classifier_domaine(texte_ocr)
+        domaine = classification["domaine"]
 
+        duree = round((time.perf_counter() - t0) * 1000)
+        logger.success(
+            f"Capture OK — {resultat['nb_mots_total']} mots, "
+            f"confiance={resultat['score_confiance']}, "
+            f"domaine={domaine}, {duree}ms"
+        )
         return {
             **etat,
             "dossier_id":        dossier_id,
             "document_id":       document_id,
             "reference_dossier": ref,
+            "domaine":           domaine,
             "resultat_capture":  resultat,
             "etape_actuelle":    "capture",
             "peut_continuer":    True,
@@ -101,7 +115,8 @@ def noeud_extraction(etat: EtatDossier) -> EtatDossier:
 
     try:
         texte    = etat["resultat_capture"]["texte_complet"]
-        resultat = executer_extraction(texte)
+        domaine  = etat.get("domaine", "AUTO")
+        resultat = executer_extraction(texte , domaine=domaine)
 
         sauvegarder_extraction(
             etat["dossier_id"],
@@ -112,16 +127,18 @@ def noeud_extraction(etat: EtatDossier) -> EtatDossier:
         duree = round((time.perf_counter() - t0) * 1000)
         logger.success(
             f"Extraction OK — "
-            f"complétude={resultat['score_completude']}, "
+            f"complétude={resultat.get('score_completude', 0)}, "
+            f"domaine={domaine}, "
             f"LLM={resultat.get('llm_duree_ms')}ms"
+
         )
 
         return {
             **etat,
             "resultat_extraction": resultat,
             "etape_actuelle":      "extraction",
-            "peut_continuer":      resultat["peut_continuer"],
-            "etape_arret": None if resultat["peut_continuer"] else "extraction"
+            "peut_continuer":      resultat.get("peut_continuer", False),
+            "etape_arret": None if resultat.get("peut_continuer") else "extraction"
         }
 
     except Exception as e:
@@ -145,12 +162,13 @@ def noeud_validation(etat: EtatDossier) -> EtatDossier:
         dossier_enrichi = enrichir_dossier(dossier_brut)
 
         logger.info(
-            f"Dossier enrichi — "
+            f"Dossier enrichi — domaine={etat.get('domaine', 'AUTO')}, "
             f"date_debut={dossier_enrichi.get('date_debut_contrat')}, "
             f"delai={dossier_enrichi.get('delai_declaration_jours')}j"
         )
-
-        resultat = executer_validation(dossier_enrichi)
+        domaine       = etat.get("domaine", "AUTO")
+        chemin_regles = get_regles_domaine(domaine)
+        resultat      = executer_validation(dossier_enrichi, chemin_regles)
         sauvegarder_validation(etat["dossier_id"], resultat)
 
         if resultat["valide"]:
@@ -169,8 +187,8 @@ def noeud_validation(etat: EtatDossier) -> EtatDossier:
             **etat,
             "resultat_validation": resultat,
             "etape_actuelle":      "validation",
-            "peut_continuer":      resultat["peut_continuer"],
-            "etape_arret": None if resultat["peut_continuer"] else "validation"
+            "peut_continuer":      resultat.get("peut_continuer", False),
+            "etape_arret": None if resultat.get("peut_continuer") else "validation"
         }
 
     except Exception as e:

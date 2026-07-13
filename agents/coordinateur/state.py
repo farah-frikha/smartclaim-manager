@@ -17,6 +17,7 @@ class EtatDossier(TypedDict):
     # ── Entrée ────────────────────────────────────────────────
     chemin_fichier:       str
     employe_id:           Optional[int]
+    domaine:              Optional[str]
     dossier_id:           Optional[int]
     document_id:          Optional[int]
     reference_dossier:    Optional[str]

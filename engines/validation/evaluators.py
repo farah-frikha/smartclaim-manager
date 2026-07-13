@@ -90,13 +90,29 @@ def evaluer_condition_si_alors(regle: dict, dossier: dict) -> tuple:
         return ok, "" if ok else regle["message_echec"]
     return True, ""
 
+def evaluer_presence_champ(regle: dict, dossier: dict) -> tuple:
+    """
+    Vérifie qu'un champ est présent et non vide dans le dossier.
+    Type générique, utile pour les règles de complétude de tout domaine.
+    """
+    val = obtenir_valeur(dossier, regle["champ_1"])
 
+    vide = (
+        val is None
+        or (isinstance(val, str) and val.strip() == "")
+        or (isinstance(val, list) and len(val) == 0)
+    )
+
+    ok = not vide
+    message = "" if ok else f"{regle['message_echec']} (champ '{regle['champ_1']}' absent)"
+    return ok, message
 # Dispatch table — mappe type → évaluateur
 EVALUATEURS = {
     "comparaison_dates":   evaluer_comparaison_dates,
     "comparaison_valeur":  evaluer_comparaison_valeur,
     "appartenance_liste":  evaluer_appartenance_liste,
     "presence_documents":  evaluer_presence_documents,
+    "presence_champ":      evaluer_presence_champ,
     "comparaison_enum":    evaluer_comparaison_enum,
     "condition_si_alors":  evaluer_condition_si_alors,
 }

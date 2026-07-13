@@ -46,29 +46,22 @@ def normaliser_date(valeur) -> str:
             return f"{match.group(3)}-{match.group(2)}-{match.group(1)}"
     return valeur
 
-
-def valider_et_normaliser(donnees: dict) -> dict:
+def valider_et_normaliser(donnees: dict, domaine: str = "AUTO") -> dict:
     """
-    Valide et normalise le JSON extrait par le LLM.
+    Valide et normalise le JSON extrait par le LLM, selon le domaine.
 
-    Pour chaque champ du SCHEMA_EXTRACTION :
-    - Vérifie la présence des champs obligatoires
-    - Convertit les montants (nettoie les symboles : "2 800 TND" → 2800.0)
-    - Normalise les dates vers YYYY-MM-DD
-    - Valide le type_sinistre contre la liste des codes valides
-    - Calcule un score de complétude (0 à 1)
-
-    Retourne :
-        donnees_validees : dict  — champs validés et normalisés
-        champs_manquants : list  — champs obligatoires absents
-        champs_invalides : list  — champs présents mais invalides
-        score_completude : float — proportion de champs renseignés
+    Charge le schéma du domaine (auto par défaut), vérifie les champs
+    obligatoires, normalise montants et dates, et calcule la complétude.
     """
+    from agents.extraction.schema import get_schema, TYPES_SINISTRES_VALIDES
+
+    schema = get_schema(domaine)
+
     donnees_validees = {}
     champs_manquants = []
     champs_invalides = []
 
-    for champ, config in SCHEMA_EXTRACTION.items():
+    for champ, config in schema.items():
         valeur = donnees.get(champ)
 
         if valeur is None:
@@ -99,26 +92,26 @@ def valider_et_normaliser(donnees: dict) -> dict:
             champs_invalides.append(champ)
             donnees_validees[champ] = None
 
-    # Normalisation des dates
-    for champ_date in ["date_sinistre", "date_declaration"]:
+    # Normalisation des dates — selon les champs date présents dans le schéma
+    champs_dates = [c for c, cfg in schema.items() if "date" in c.lower()]
+    for champ_date in champs_dates:
         if donnees_validees.get(champ_date):
             donnees_validees[champ_date] = normaliser_date(
                 donnees_validees[champ_date]
             )
 
-    # Validation type sinistre
-    type_sin = donnees_validees.get("type_sinistre")
-    if type_sin and type_sin not in TYPES_SINISTRES_VALIDES:
-        logger.warning(f"Type sinistre non reconnu : '{type_sin}' → 'AUTRE'")
-        donnees_validees["type_sinistre"] = "AUTRE"
+    # Validation type_sinistre — uniquement pour le domaine auto
+    if domaine == "AUTO":
+        type_sin = donnees_validees.get("type_sinistre")
+        if type_sin and type_sin not in TYPES_SINISTRES_VALIDES:
+            logger.warning(f"Type sinistre non reconnu : '{type_sin}' → 'AUTRE'")
+            donnees_validees["type_sinistre"] = "AUTRE"
 
     # Score de complétude
     champs_renseignes = sum(
         1 for v in donnees_validees.values() if v is not None
     )
-    score_completude = round(
-        champs_renseignes / len(SCHEMA_EXTRACTION), 2
-    )
+    score_completude = round(champs_renseignes / len(schema), 2)
 
     return {
         "donnees_validees": donnees_validees,

@@ -1,0 +1,47 @@
+{
+  "metadata": {
+    "title": "Règles de validation logiques - CNAM Soins (démo)",
+    "version": "1.0.0",
+    "note": "Règles de cohérence logique. À remplacer par les exigences réglementaires CNAM lors du déploiement réel."
+  },
+  "rules": [
+    {
+      "id": "CS-01",
+      "type": "presence_champ",
+      "description": "Le nom de la victime doit être présent.",
+      "champ_1": "nom_victime",
+      "message_echec": "Nom de la victime manquant — dossier incomplet",
+      "obligatoire": true,
+      "source": "Règle logique de complétude"
+    },
+    {
+      "id": "CS-02",
+      "type": "presence_champ",
+      "description": "Le numéro d'immatriculation doit être présent.",
+      "champ_1": "numero_immatriculation",
+      "message_echec": "Numéro d'immatriculation manquant — impossible d'identifier l'assuré",
+      "obligatoire": true,
+      "source": "Règle logique de complétude"
+    },
+    {
+      "id": "CS-03",
+      "type": "presence_champ",
+      "description": "Au moins un type de prestation doit être demandé.",
+      "champ_1": "type_prestation",
+      "message_echec": "Aucune prestation demandée — la demande est sans objet",
+      "obligatoire": true,
+      "source": "Règle logique de cohérence"
+    },
+    {
+      "id": "CS-04",
+      "type": "comparaison_dates",
+      "description": "La date de demande doit être postérieure ou égale à la date de l'accident.",
+      "champ_1": "date_demande",
+      "champ_2": "date_accident",
+      "operateur": ">=",
+      "message_echec": "Date de demande antérieure à la date de l'accident — incohérence",
+      "obligatoire": false,
+      "source": "Règle logique de cohérence temporelle"
+    }
+  ]
+}
