@@ -17,5 +17,5 @@ from engines.database   import (
     sauvegarder_validation, sauvegarder_scoring, sauvegarder_decision,
     creer_utilisateur, creer_employe_et_utilisateur , obtenir_utilisateur_par_email,
     obtenir_utilisateur_par_id, mettre_a_jour_derniere_connexion,
-    lister_utilisateurs, desactiver_utilisateur,
+    lister_utilisateurs, desactiver_utilisateur,changer_statut_utilisateur, creer_reclamation, lister_reclamations, lister_reclamations_utilisateur ,repondre_reclamation,
 )

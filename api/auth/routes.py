@@ -22,7 +22,8 @@ from api.auth.schemas import (
     ConnexionRequest,
     TokenResponse,
     ChangementMotDePasseRequest,
-    UtilisateurResponse
+    UtilisateurResponse ,
+    ChangementStatutRequest
 )
 from api.dependencies import get_utilisateur_actuel, exiger_roles
 from engines.database import (
@@ -30,12 +31,14 @@ from engines.database import (
     mettre_a_jour_derniere_connexion,
     lister_utilisateurs ,
     obtenir_utilisateur_par_id ,
-    get_connection
+    get_connection ,
+    changer_statut_utilisateur
 )
 
 router = APIRouter(
     prefix="/auth",
     tags=["Authentification"]
+
 )
 
 
@@ -45,7 +48,7 @@ router = APIRouter(
     summary="Créer un compte utilisateur",
     description="Crée un nouveau compte. En production, réservé à l'ADMIN."
 )
-def inscription(donnees: InscriptionRequest):
+def inscription(donnees: InscriptionRequest , utilisateur: dict = Depends(exiger_roles("ADMIN"))):
     roles_valides = ["EMPLOYE", "GESTIONNAIRE", "ADMIN"]
     if donnees.role not in roles_valides:
         raise HTTPException(
@@ -187,3 +190,27 @@ def changer_mot_de_passe(
         conn.close()
 
     return {"message": "Mot de passe modifié avec succès"}
+@router.put(
+    "/utilisateurs/{utilisateur_id}/statut",
+    summary="Activer ou désactiver un compte",
+    description="Réservé à l'ADMIN. La désactivation empêche la connexion "
+                "sans supprimer les données de l'utilisateur."
+)
+def modifier_statut_utilisateur(
+    utilisateur_id: int,
+    donnees: ChangementStatutRequest,
+    utilisateur: dict = Depends(exiger_roles("ADMIN"))
+):
+    # Un administrateur ne peut pas désactiver son propre compte
+    if utilisateur_id == utilisateur["utilisateur_id"] and not donnees.actif:
+        raise HTTPException(
+            status_code=400,
+            detail="Vous ne pouvez pas désactiver votre propre compte"
+        )
+
+    resultat = changer_statut_utilisateur(utilisateur_id, donnees.actif)
+
+    if not resultat["succes"]:
+        raise HTTPException(status_code=404, detail=resultat["message"])
+
+    return resultat

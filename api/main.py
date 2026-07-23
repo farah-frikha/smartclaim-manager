@@ -70,3 +70,5 @@ def racine():
 def sante():
     """Endpoint de healthcheck — utilisé par les outils de monitoring."""
     return {"statut": "ok"}
+from api.reclamations.routes import router as reclamations_router
+app.include_router(reclamations_router)

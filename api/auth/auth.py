@@ -66,11 +66,14 @@ def verifier_token(token: str) -> dict:
 def authentifier_utilisateur(email: str, mot_de_passe: str) -> Optional[dict]:
     """
     Vérifie les identifiants contre la base de données.
+    Un compte désactivé ne peut pas se connecter.
     Import local pour éviter la circularité des imports.
     """
     from engines.database import obtenir_utilisateur_par_email
     utilisateur = obtenir_utilisateur_par_email(email)
     if not utilisateur:
+        return None
+    if not utilisateur.get("actif", 1):
         return None
     if not verifier_mot_de_passe(mot_de_passe, utilisateur["mot_de_passe_hash"]):
         return None

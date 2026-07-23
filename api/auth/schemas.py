@@ -61,4 +61,7 @@ class UtilisateurResponse(BaseModel):
     created_at:         str
 class ChangementMotDePasseRequest(BaseModel):
     ancien_mot_de_passe:  str = Field(min_length=1)
-    nouveau_mot_de_passe: str = Field(min_length=6)    
+    nouveau_mot_de_passe: str = Field(min_length=6)  
+class ChangementStatutRequest(BaseModel):
+    """Requête d'activation ou de désactivation d'un compte."""
+    actif: bool

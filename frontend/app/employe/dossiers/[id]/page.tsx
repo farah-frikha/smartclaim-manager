@@ -29,6 +29,10 @@ export default function MonDossierDetailPage() {
   const [data, setData] = useState<DossierDetail | null>(null);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState("");
+  const [reclamOuvert, setReclamOuvert] = useState(false);
+  const [messageReclam, setMessageReclam] = useState("");
+  const [envoiOk, setEnvoiOk] = useState(false);
+  const [mesReclamations, setMesReclamations] = useState<any[]>([]);
 
   useEffect(() => {
     api
@@ -37,7 +41,32 @@ export default function MonDossierDetailPage() {
       .catch(() => setErreur("Vous n'avez pas accès à ce dossier"))
       .finally(() => setChargement(false));
   }, [params.id]);
+const chargerReclamations = () => {
+    api.get("/reclamations/mes-reclamations")
+      .then((res) =>
+        setMesReclamations(
+          res.data.filter((r: any) => r.dossier_id === Number(params.id))
+        )
+      )
+      .catch(() => {});
+  };
 
+  useEffect(chargerReclamations, [params.id]);  
+const envoyerReclamation = async () => {
+    if (!messageReclam.trim()) return;
+    try {
+      await api.post("/reclamations", {
+        dossier_id: Number(params.id),
+        message: messageReclam.trim(),
+      });
+      setEnvoiOk(true);
+      setMessageReclam("");
+      chargerReclamations();
+      setTimeout(() => { setReclamOuvert(false); setEnvoiOk(false); }, 2000);
+    } catch {
+      alert("Erreur lors de l'envoi de la réclamation");
+    }
+  };
   if (chargement) {
     return (
       <div className="space-y-4">
@@ -104,21 +133,88 @@ export default function MonDossierDetailPage() {
       })()}
 
       {/* Informations */}
+{/* Réclamation */}
       <Card>
-        <CardHeader title="Informations du dossier" subtitle="Données extraites de votre document" />
-        <CardBody className="p-0">
-          <div className="divide-y divide-border-light">
-            {Object.entries(champs).map(([nom, valeur]) => (
-              <div key={nom} className="flex items-center justify-between px-5 py-3">
-                <span className="text-sm text-text-secondary capitalize">
-                  {nom.replace(/_/g, " ")}
-                </span>
-                <span className="text-sm font-medium text-text-primary text-right max-w-md">
-                  {valeur || "—"}
-                </span>
+        <CardHeader
+          title="Une question sur ce dossier ?"
+          subtitle="Adressez une réclamation au service de gestion"
+        />
+        <CardBody>
+          {/* Réclamations déjà déposées */}
+          {mesReclamations.length > 0 && (
+            <div className="mb-5 space-y-3">
+              {mesReclamations.map((r) => (
+                <div
+                  key={r.reclamation_id}
+                  className="rounded-lg border border-border-light p-4"
+                >
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-xs text-text-muted">
+                      {new Date(r.created_at).toLocaleDateString("fr-FR")}
+                    </span>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                        r.statut === "ouverte"
+                          ? "bg-amber-50 text-amber-700"
+                          : "bg-emerald-50 text-emerald-700"
+                      }`}
+                    >
+                      {r.statut === "ouverte" ? "En attente" : "Répondue"}
+                    </span>
+                  </div>
+
+                  <p className="text-sm text-text-primary">{r.message}</p>
+
+                  {r.reponse && (
+                    <div className="mt-3 rounded-md bg-surface-hover p-3">
+                      <p className="mb-1 text-xs font-medium text-text-muted">
+                        Réponse du service de gestion
+                      </p>
+                      <p className="text-sm text-text-primary">{r.reponse}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          {envoiOk ? (
+            <p className="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+              Votre réclamation a bien été transmise. Un gestionnaire vous répondra.
+            </p>
+          ) : !reclamOuvert ? (
+            <button
+              onClick={() => setReclamOuvert(true)}
+              className="flex items-center gap-2 rounded-lg border border-border-app px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-surface-hover"
+            >
+              <FileText className="h-4 w-4" />
+              Déposer une réclamation
+            </button>
+          ) : (
+            <div className="space-y-3">
+              <textarea
+                value={messageReclam}
+                onChange={(e) => setMessageReclam(e.target.value)}
+                rows={4}
+                placeholder="Décrivez le motif de votre réclamation..."
+                className="w-full rounded-lg border border-border-app bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:border-teal-600 focus:outline-none"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={envoyerReclamation}
+                  disabled={!messageReclam.trim()}
+                  className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-800 disabled:opacity-50"
+                >
+                  Envoyer
+                </button>
+                <button
+                  onClick={() => { setReclamOuvert(false); setMessageReclam(""); }}
+                  className="rounded-lg px-4 py-2 text-sm text-text-secondary transition-colors hover:bg-surface-hover"
+                >
+                  Annuler
+                </button>
               </div>
-            ))}
-          </div>
+            </div>
+          )}
         </CardBody>
       </Card>
     </div>

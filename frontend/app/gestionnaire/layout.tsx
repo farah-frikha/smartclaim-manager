@@ -11,6 +11,7 @@ import {
   ScrollText,
   Users,
   SlidersHorizontal,
+  MessageSquare,
   LogOut,
   Shield,
   ChevronRight,
@@ -54,6 +55,7 @@ export default function GestionnaireLayout({
   const navigation = [
     { href: "/gestionnaire", label: "Tableau de bord", icon: LayoutDashboard },
     { href: "/gestionnaire/dossiers", label: "Dossiers", icon: FolderOpen },
+    { href: "/gestionnaire/reclamations", label: "Réclamations", icon: MessageSquare },
     { href: "/gestionnaire/audit", label: "Journal d'audit", icon: ScrollText },
     ...(estAdmin
       ? [

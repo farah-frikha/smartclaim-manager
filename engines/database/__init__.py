@@ -43,7 +43,9 @@ from engines.database.crud_utilisateurs import (
     mettre_a_jour_derniere_connexion,
     lister_utilisateurs,
     desactiver_utilisateur,
+    changer_statut_utilisateur,
 )
+from engines.database.crud_reclamations import ( creer_reclamation, lister_reclamations, lister_reclamations_utilisateur ,repondre_reclamation ,)
 
 __all__ = [
     # Connexion
@@ -57,5 +59,7 @@ __all__ = [
     # Utilisateurs
     "creer_utilisateur", "creer_employe_et_utilisateur", "obtenir_utilisateur_par_email",
     "obtenir_utilisateur_par_id", "mettre_a_jour_derniere_connexion",
-    "lister_utilisateurs", "desactiver_utilisateur",
+    "lister_utilisateurs", "desactiver_utilisateur", "changer_statut_utilisateur",
+    # Réclamations
+    "creer_reclamation", "lister_reclamations", "lister_reclamations_utilisateur", "repondre_reclamation"
 ]

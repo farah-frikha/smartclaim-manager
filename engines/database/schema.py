@@ -360,4 +360,26 @@ CREATE TABLE IF NOT EXISTS utilisateurs (
 
 CREATE INDEX IF NOT EXISTS idx_utilisateurs_email ON utilisateurs(email);
 CREATE INDEX IF NOT EXISTS idx_utilisateurs_role  ON utilisateurs(role);
+CREATE TABLE IF NOT EXISTS reclamations (
+    reclamation_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    dossier_id INTEGER NOT NULL,
+    utilisateur_id INTEGER NOT NULL,
+    message TEXT NOT NULL,
+    statut TEXT DEFAULT 'ouverte' CHECK(statut IN ('ouverte','traitee')),
+    reponse TEXT,
+    repondu_par INTEGER,
+    date_reponse TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (dossier_id)
+        REFERENCES dossiers_sinistres(dossier_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (utilisateur_id)
+        REFERENCES utilisateurs(utilisateur_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (repondu_par)
+        REFERENCES utilisateurs(utilisateur_id)
+        ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_reclamations_dossier ON reclamations(dossier_id);
 """

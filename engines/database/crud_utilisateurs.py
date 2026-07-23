@@ -209,3 +209,27 @@ def creer_employe_et_utilisateur(
         }
     finally:
         conn.close()
+def changer_statut_utilisateur(utilisateur_id: int, actif: bool) -> dict:
+    """
+    Active ou désactive un compte utilisateur.
+    La désactivation empêche la connexion sans supprimer les données,
+    ce qui préserve l'historique des dossiers liés.
+    """
+    conn = get_connection()
+    try:
+        cursor = conn.execute("""
+            UPDATE utilisateurs
+            SET actif = ?, updated_at = datetime('now')
+            WHERE utilisateur_id = ?
+        """, (1 if actif else 0, utilisateur_id))
+        conn.commit()
+
+        if cursor.rowcount == 0:
+            return {"succes": False, "message": "Utilisateur introuvable"}
+
+        return {
+            "succes": True,
+            "message": f"Compte {'activé' if actif else 'désactivé'}"
+        }
+    finally:
+        conn.close()
