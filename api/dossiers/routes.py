@@ -5,6 +5,8 @@ Cœur du système — orchestre le pipeline IA complet.
 """
 import sys
 import os
+
+from pyparsing import Optional
 sys.path.insert(0, os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))
 )))
@@ -132,10 +134,12 @@ async def upload_dossier(
 def liste_tous_dossiers(
     statut:      str  = Query(None, description="Filtrer par statut"),
     limite:      int  = Query(50,   description="Nombre maximum de résultats"),
-    utilisateur: dict = Depends(exiger_roles("GESTIONNAIRE", "ADMIN"))
+    utilisateur: dict = Depends(exiger_roles("GESTIONNAIRE", "ADMIN")),
+    domaine: str | None = None,
+
 ):
     """Retourne tous les dossiers avec filtre optionnel sur le statut."""
-    return lister_dossiers(statut=statut, limite=limite)
+    return lister_dossiers(statut=statut, domaine=domaine, limite=limite)
 
 
 @router.get(

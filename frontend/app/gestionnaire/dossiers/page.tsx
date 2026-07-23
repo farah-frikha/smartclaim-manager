@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import api from "@/lib/api";
+import { libelleDomaine } from "@/lib/domaines";
 
 interface Dossier {
   dossier_id: number;
   reference_dossier: string;
   statut_global: string;
+  domaine: string | null;
   montant_reclame: number | null;
   date_sinistre: string | null;
   created_at: string;
@@ -20,6 +22,12 @@ const STATUTS = [
   { valeur: "refuse", label: "Refusé" },
   { valeur: "complement_requis", label: "Complément requis" },
   { valeur: "en_traitement", label: "En traitement" },
+];
+
+const DOMAINES = [
+  { valeur: "", label: "Tous les domaines" },
+  { valeur: "AUTO", label: "Auto" },
+  { valeur: "CNAM_SOINS", label: "CNAM Soins" },
 ];
 
 const STATUT_STYLE: Record<string, string> = {
@@ -35,20 +43,26 @@ const STATUT_STYLE: Record<string, string> = {
 export default function DossiersListePage() {
   const searchParams = useSearchParams();
   const statutInitial = searchParams.get("statut") || "";
+  const domaineInitial = searchParams.get("domaine") || "";
 
   const [dossiers, setDossiers] = useState<Dossier[]>([]);
   const [filtreStatut, setFiltreStatut] = useState(statutInitial);
+  const [filtreDomaine, setFiltreDomaine] = useState(domaineInitial);
   const [recherche, setRecherche] = useState("");
   const [chargement, setChargement] = useState(true);
 
-useEffect(() => {
+  useEffect(() => {
     setChargement(true);
-    const params = filtreStatut ? { statut: filtreStatut } : {};
+
+    const params: Record<string, string> = {};
+    if (filtreStatut) params.statut = filtreStatut;
+    if (filtreDomaine) params.domaine = filtreDomaine;
+
     api
       .get("/dossiers", { params })
       .then((res) => setDossiers(res.data))
       .finally(() => setChargement(false));
-  }, [filtreStatut]);
+  }, [filtreStatut, filtreDomaine]);
 
   const dossiersFiltres = dossiers.filter((d) =>
     d.reference_dossier.toLowerCase().includes(recherche.toLowerCase())
@@ -70,6 +84,7 @@ useEffect(() => {
           onChange={(e) => setRecherche(e.target.value)}
           className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none"
         />
+
         <select
           value={filtreStatut}
           onChange={(e) => setFiltreStatut(e.target.value)}
@@ -78,6 +93,18 @@ useEffect(() => {
           {STATUTS.map((s) => (
             <option key={s.valeur} value={s.valeur}>
               {s.label}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={filtreDomaine}
+          onChange={(e) => setFiltreDomaine(e.target.value)}
+          className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none"
+        >
+          {DOMAINES.map((d) => (
+            <option key={d.valeur} value={d.valeur}>
+              {d.label}
             </option>
           ))}
         </select>
@@ -94,6 +121,7 @@ useEffect(() => {
               <tr>
                 <th className="px-4 py-3 text-left font-medium text-gray-500">Référence</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-500">Statut</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-500">Domaine</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-500">Montant</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-500">Date sinistre</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-500">Créé le</th>
@@ -116,6 +144,7 @@ useEffect(() => {
                       {dossier.reference_dossier}
                     </Link>
                   </td>
+
                   <td className="px-4 py-3">
                     <span
                       className={`rounded-full px-2.5 py-1 text-xs font-medium ${
@@ -125,12 +154,21 @@ useEffect(() => {
                       {dossier.statut_global}
                     </span>
                   </td>
+
+                  <td className="px-4 py-3">
+                    <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-text-secondary ring-1 ring-inset ring-slate-500/20">
+                      {libelleDomaine(dossier.domaine)}
+                    </span>
+                  </td>
+
                   <td className="px-4 py-3 text-gray-700">
                     {dossier.montant_reclame ? `${dossier.montant_reclame} TND` : "—"}
                   </td>
+
                   <td className="px-4 py-3 text-gray-700">
                     {dossier.date_sinistre || "—"}
                   </td>
+
                   <td className="px-4 py-3 text-gray-500">
                     {new Date(dossier.created_at).toLocaleDateString("fr-FR")}
                   </td>

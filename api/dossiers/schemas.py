@@ -41,6 +41,7 @@ class DossierListeResponse(BaseModel):
     dossier_id:        int
     reference_dossier: str
     statut_global:     str
+    domaine:           Optional[str] = "AUTO"
     montant_reclame:   Optional[float]
     date_sinistre:     Optional[str]
     created_at:        str

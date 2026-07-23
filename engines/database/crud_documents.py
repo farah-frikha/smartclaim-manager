@@ -228,35 +228,40 @@ def lire_dossier_complet(dossier_id: int) -> dict:
         conn.close()
 
 
-def lister_dossiers(statut: str = None, limite: int = 50) -> list:
+def lister_dossiers(statut: str = None, domaine: str = None, limite: int = 100) -> list:
     """
-    Liste les dossiers avec filtre optionnel sur le statut.
-    Utilisé par le Portail Responsable — page historique.
+    Liste les dossiers, avec filtres optionnels par statut et par domaine.
     """
     conn = get_connection()
     conn.row_factory = sqlite3.Row
     try:
+        requete = """
+            SELECT dossier_id, reference_dossier,
+                   statut_global, domaine, montant_reclame,
+                   date_sinistre, created_at
+            FROM dossiers_sinistres
+        """
+        conditions = []
+        params = []
+
         if statut:
-            rows = conn.execute("""
-                SELECT dossier_id, reference_dossier,
-                       statut_global, montant_reclame,
-                       date_sinistre, created_at
-                FROM dossiers_sinistres
-                WHERE statut_global = ?
-                ORDER BY created_at DESC LIMIT ?
-            """, (statut, limite)).fetchall()
-        else:
-            rows = conn.execute("""
-                SELECT dossier_id, reference_dossier,
-                       statut_global, montant_reclame,
-                       date_sinistre, created_at
-                FROM dossiers_sinistres
-                ORDER BY created_at DESC LIMIT ?
-            """, (limite,)).fetchall()
+            conditions.append("statut_global = ?")
+            params.append(statut)
+
+        if domaine:
+            conditions.append("domaine = ?")
+            params.append(domaine)
+
+        if conditions:
+            requete += " WHERE " + " AND ".join(conditions)
+
+        requete += " ORDER BY created_at DESC LIMIT ?"
+        params.append(limite)
+
+        rows = conn.execute(requete, params).fetchall()
         return [dict(r) for r in rows]
     finally:
-        conn.close()
-
+        conn.close()        
 
 def lister_dossiers_par_employe(employe_id: int,
                                  limite: int = 50) -> list:
@@ -270,7 +275,7 @@ def lister_dossiers_par_employe(employe_id: int,
     try:
         rows = conn.execute("""
             SELECT dossier_id, reference_dossier,
-                   statut_global, montant_reclame,
+                   statut_global,domaine , montant_reclame,
                    date_sinistre, created_at
             FROM dossiers_sinistres
             WHERE employe_id = ?

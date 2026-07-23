@@ -62,24 +62,15 @@ def noeud_capture(etat: EtatDossier) -> EtatDossier:
 
         cursor = conn.execute("""
             INSERT INTO dossiers_sinistres (
-                reference_dossier, employe_id, contrat_id, domaine,
-                type_sinistre_id, date_sinistre, statut_global
-            ) VALUES (?, ?, 1, ?, date('now'), 'en_traitement')
+                reference_dossier, employe_id, contrat_id,
+                type_sinistre_id, date_sinistre, statut_global, domaine
+            ) VALUES (?, ?, 1, 1, date('now'), 'en_traitement', ?)
         """, (ref, employe_id, domaine))
         dossier_id = cursor.lastrowid
         conn.commit()
         conn.close()
 
         document_id = sauvegarder_document(dossier_id, resultat)
-        duree = round((time.perf_counter() - t0) * 1000)
-        logger.success(
-            f"Capture OK — {resultat['nb_mots_total']} mots, "
-            f"confiance={resultat['score_confiance']}, {duree}ms"
-        )
-        texte_ocr = resultat.get("texte_complet", "")
-        classification = classifier_domaine(texte_ocr)
-        domaine = classification["domaine"]
-
         duree = round((time.perf_counter() - t0) * 1000)
         logger.success(
             f"Capture OK — {resultat['nb_mots_total']} mots, "

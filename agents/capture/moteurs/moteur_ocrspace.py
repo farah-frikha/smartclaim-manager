@@ -81,7 +81,6 @@ class MoteurOcrSpace(MoteurOCR):
             return self._resultat_vide(numero_page)
 
         texte_brut = resultats[0].get("ParsedText", "").strip()
-        logger.info(f"Texte OCR.space extrait :\n{texte_brut}")
 
         lignes = [
             {"texte": l, "confiance": None}
